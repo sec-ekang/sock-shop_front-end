@@ -1,20 +1,16 @@
-# Stage 1: Builder stage for preparing source code
+# Stage 1: Builder for preparing source code
 FROM registry.access.redhat.com/ubi9/nodejs-18:latest AS builder
-# Switch to root for system operations
 USER 0
-# Update system packages and install git
-RUN dnf update -y && dnf install -y git && dnf clean all
+RUN dnf update -y && dnf clean all
 
 # Add labels for metadata
 LABEL maintainer="Sock Shop Team"       description="Builder stage for Sock Shop front-end"
 
-# Original was https://github.com/microservices-demo/front-end
-ARG FRONT_END_REPO=https://github.com/ocp-power-demos/sock-shop-front-end
-ARG FRONT_END_COMMIT=master
+# Set working directory
+WORKDIR /usr/src/app
 
-# Clone and prepare source code
-WORKDIR /src
-RUN git clone ${FRONT_END_REPO} front-end && cd front-end && git checkout ${FRONT_END_COMMIT}
+# Copy application source code from the local context
+COPY . /usr/src/app
 
 # Stage 2: Production runtime environment
 FROM registry.access.redhat.com/ubi9/nodejs-18-minimal:latest
@@ -44,8 +40,8 @@ RUN microdnf install -y nc \
 WORKDIR /usr/src/app
 
 # Copy dependency manifests first for better layer caching
-COPY --from=builder /src/front-end/package.json /usr/src/app/
-COPY --from=builder /src/front-end/yarn.lock /usr/src/app/
+COPY --from=builder /usr/src/app/package.json /usr/src/app/
+COPY --from=builder /usr/src/app/yarn.lock /usr/src/app/
 
 # Dependency installation and configuration
 RUN mkdir -p /opt/app-root/src/.npm \
@@ -60,7 +56,7 @@ USER ${SERVICE_USER}
 RUN yarn install
 
 # Copy application source code
-COPY --from=builder /src/front-end/ /usr/src/app
+COPY --from=builder /usr/src/app/ /usr/src/app
 
 # Healthcheck for the container
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3   CMD nc -z 127.0.0.1 ${PORT} || exit 1
