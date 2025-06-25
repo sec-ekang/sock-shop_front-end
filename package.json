@@ -4,7 +4,10 @@
   "description": "Front end for microservices demo application.",
   "main": "server.js",
   "scripts": {
-    "test": "istanbul cover node_modules/.bin/_mocha -- test/*_test.js test/api/*_test.js",
+    "test": "mocha test/helpers_test.js test/api/endpoints_test.js --reporter mocha-junit-reporter --reporter-options mochaFile=junit.xml",
+    "test:integration:simple": "mocha test/e2e/*_test.js",
+    "test:smoke": "mocha test/e2e/smoke/*_test.js",
+    "lint": "echo 'lint script not implemented yet'",
     "coverage": "istanbul cover --report cobertura node_modules/.bin/_mocha -- test/*_test.js test/api/*_test.js && mocha test/*_test.js test/api/*_test.js --reporter mocha-junit-reporter --reporter-options mochaFile=./results/test-results.xml",
     "start": "node server.js"
   },
@@ -40,3 +43,4 @@
     "mongodb": "^2.2.5"
   }
 }
+
